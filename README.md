@@ -1,3 +1,5 @@
+This is a [hacky] fork of [!Bastian Venthur's(https://github.com/venthur)] [![python-ardrone(https://github.com/venthur/python-ardrone)] library modified to support the ARDrone2 as inspired by (and mostly borrowed from) [!Jonathan Hunt's](https://github.com/jjh42)] proposed [!changes(https://github.com/venthur/python-ardrone/pull/2)].
+
 <a href="https://flattr.com/submit/auto?user_id=venthur&url=http%3A%2F%2Fgithub.com%2Fventhur%2Fpython-ardrone" target="_blank"><img src="http://api.flattr.com/button/flattr-badge-large.png" alt="Flattr this" title="Flattr this" border="0"></a>
 
 [![Video of the drone in action](https://img.youtube.com/vi/2HEV37GbUow/0.jpg)](https://www.youtube.com/watch?v=2HEV37GbUow "Click to go to the video.")
