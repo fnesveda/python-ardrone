@@ -1,4 +1,4 @@
-This is a [hacky] fork of [!Bastian Venthur's(https://github.com/venthur)] [![python-ardrone(https://github.com/venthur/python-ardrone)] library modified to support the ARDrone2 as inspired by (and mostly borrowed from) [!Jonathan Hunt's](https://github.com/jjh42)] proposed [!changes(https://github.com/venthur/python-ardrone/pull/2)].
+This is a quick and dirty fork of <a href="https://github.com/venthur" target="_blank">Bastian Venthur's</a> <a href="https://github.com/venthur/python-ardrone" target="_blank">python-ardrone</a> library modified to support the ARDrone2 as inspired by (and mostly borrowed from) <a href="https://github.com/jjh42" target="_blank">Jonathan Hunt's</a> proposed <a href="https://github.com/venthur/python-ardrone/pull/2)">changes</a>.
 
 <a href="https://flattr.com/submit/auto?user_id=venthur&url=http%3A%2F%2Fgithub.com%2Fventhur%2Fpython-ardrone" target="_blank"><img src="http://api.flattr.com/button/flattr-badge-large.png" alt="Flattr this" title="Flattr this" border="0"></a>
 
