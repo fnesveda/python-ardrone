@@ -29,7 +29,7 @@ import threading
 import multiprocessing
 
 import libardrone
-import arvideo
+import ar2video
 
 
 class ARDroneNetworkProcess(multiprocessing.Process):
@@ -39,17 +39,21 @@ class ARDroneNetworkProcess(multiprocessing.Process):
     data and sends it to the IPCThread.
     """
 
-    def __init__(self, nav_pipe, video_pipe, com_pipe):
+    def __init__(self, nav_pipe, video_pipe, com_pipe, frame_size=(360,640)):
         multiprocessing.Process.__init__(self)
         self.nav_pipe = nav_pipe
         self.video_pipe = video_pipe
         self.com_pipe = com_pipe
+        self.paveparser = ar2video.PaVEParser(self.video_pipe, frame_size=frame_size)
 
     def run(self):
-        video_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        #video_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #video_socket.setblocking(0)
+        #video_socket.bind(('', libardrone.ARDRONE_VIDEO_PORT))
+        #video_socket.sendto("\x01\x00\x00\x00", ('192.168.1.1', libardrone.ARDRONE_VIDEO_PORT))
+        video_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        video_socket.connect(('192.168.1.1', libardrone.ARDRONE_VIDEO_PORT))
         video_socket.setblocking(0)
-        video_socket.bind(('', libardrone.ARDRONE_VIDEO_PORT))
-        video_socket.sendto("\x01\x00\x00\x00", ('192.168.1.1', libardrone.ARDRONE_VIDEO_PORT))
 
         nav_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         nav_socket.setblocking(0)
@@ -64,12 +68,13 @@ class ARDroneNetworkProcess(multiprocessing.Process):
                     while 1:
                         try:
                             data = video_socket.recv(65535)
+                            self.paveparser.write(data)
                         except IOError:
                             # we consumed every packet from the socket and
                             # continue with the last one
                             break
-                    w, h, image, t = arvideo.read_picture(data)
-                    self.video_pipe.send(image)
+                    #w, h, image, t = arvideo.read_picture(data)
+                    #self.video_pipe.send(image)
                 elif i == nav_socket:
                     while 1:
                         try:

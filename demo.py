@@ -35,9 +35,9 @@ import libardrone
 
 def main():
     pygame.init()
-    W, H = 320, 240
+    W, H = 640, 360
     screen = pygame.display.set_mode((W, H))
-    drone = libardrone.ARDrone()
+    drone = libardrone.ARDrone(frame_size=(W,H))
     clock = pygame.time.Clock()
     running = True
     while running:
@@ -101,7 +101,8 @@ def main():
                     drone.speed = 1.0
 
         try:
-            surface = pygame.image.fromstring(drone.image, (W, H), 'RGB')
+            #surface = pygame.image.fromstring(drone.image, (W, H), 'RGB')
+            surface = pygame.image.frombuffer(drone.image, (W, H), 'RGB')
             # battery status
             hud_color = (255, 0, 0) if drone.navdata.get('drone_state', dict()).get('emergency_mask', 1) else (10, 10, 255)
             bat = drone.navdata.get(0, dict()).get('battery', 0)

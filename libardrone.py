@@ -50,7 +50,7 @@ class ARDrone(object):
     navdata.
     """
 
-    def __init__(self):
+    def __init__(self, frame_size=(360,640)):
         self.seq_nr = 1
         self.timer_t = 0.2
         self.com_watchdog_timer = threading.Timer(self.timer_t, self.commwdg)
@@ -60,7 +60,8 @@ class ARDrone(object):
         self.video_pipe, video_pipe_other = multiprocessing.Pipe()
         self.nav_pipe, nav_pipe_other = multiprocessing.Pipe()
         self.com_pipe, com_pipe_other = multiprocessing.Pipe()
-        self.network_process = arnetwork.ARDroneNetworkProcess(nav_pipe_other, video_pipe_other, com_pipe_other)
+        self.network_process = arnetwork.ARDroneNetworkProcess(
+            nav_pipe_other, video_pipe_other, com_pipe_other, frame_size)
         self.network_process.start()
         self.ipc_thread = arnetwork.IPCThread(self)
         self.ipc_thread.start()
@@ -319,6 +320,7 @@ def at(command, seq, params):
     msg = "AT*%s=%i%s\r" % (command, seq, param_str)
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.sendto(msg, ("192.168.1.1", ARDRONE_COMMAND_PORT))
+    print "SENT: %s" % msg
 
 def f2i(f):
     """Interpret IEEE-754 floating-point value as signed integer.
