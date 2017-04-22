@@ -1,10 +1,14 @@
+About:
+------
+
 This is a quick and dirty fork of <a href="https://github.com/venthur" target="_blank">Bastian Venthur's</a> <a href="https://github.com/venthur/python-ardrone" target="_blank">python-ardrone</a> library modified to support the ARDrone2 as inspired by (and mostly borrowed from) <a href="https://github.com/jjh42" target="_blank">Jonathan Hunt's</a> proposed <a href="https://github.com/venthur/python-ardrone/pull/2)">changes</a>.
 
-<a href="https://flattr.com/submit/auto?user_id=venthur&url=http%3A%2F%2Fgithub.com%2Fventhur%2Fpython-ardrone" target="_blank"><img src="http://api.flattr.com/button/flattr-badge-large.png" alt="Flattr this" title="Flattr this" border="0"></a>
+The primary difference between this fork and the parent is support for the unique way the ARDrone2 transmits video to clients. Instead of sending raw images via UDP as the original ARDrone does, a TCP connection is maintained over which H.264 encoded video (wrapped in a strange codec designed by Parrot) is streamed.
 
-[![Video of the drone in action](https://img.youtube.com/vi/2HEV37GbUow/0.jpg)](https://www.youtube.com/watch?v=2HEV37GbUow "Click to go to the video.")
+**Warning**: This is dirty. Very dirty. Both the code (sloppy) and the architecture (piping H.264 over stdin to a separate ffmpeg process and listening for decoded frames over stdout). But it works! And performance seems to be perfectly acceptable.
 
-A video of the library controlling a drone in action (click to jump to the video).
+A big thank you to Bastian Venthur and Jonathan Hunt for doing 99.99999% of the work behind this! Consider tipping Bastian Venthur's Flattr account (see the original <a href="https://github.com/venthur/python-ardrone" target="_blank">python-ardrone</a>) if you find this helpful.
+
 
 Getting Started:
 ----------------
@@ -41,13 +45,6 @@ and lets you remote-control the drone with the keyboard:
 Here is a [video] of the library in action:
 
   [video]: http://youtu.be/2HEV37GbUow
-
-Repository:
------------
-
-The public repository is located here:
-
-  git://github.com/venthur/python-ardrone.git
 
 
 Requirements:
