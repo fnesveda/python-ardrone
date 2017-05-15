@@ -25,7 +25,7 @@ Python library for the AR.Drone.
 This module was tested with Python 2.6.6 and AR.Drone vanilla firmware 1.5.1.
 """
 
-
+import datetime
 import socket
 import struct
 import sys
@@ -50,7 +50,7 @@ class ARDrone(object):
     navdata.
     """
 
-    def __init__(self, frame_size=(360,640)):
+    def __init__(self, frame_size=(360,640), recording=None):
         self.seq_nr = 1
         self.timer_t = 0.2
         self.com_watchdog_timer = threading.Timer(self.timer_t, self.commwdg)
@@ -61,13 +61,17 @@ class ARDrone(object):
         self.nav_pipe, nav_pipe_other = multiprocessing.Pipe()
         self.com_pipe, com_pipe_other = multiprocessing.Pipe()
         self.network_process = arnetwork.ARDroneNetworkProcess(
-            nav_pipe_other, video_pipe_other, com_pipe_other, frame_size)
+            nav_pipe_other, video_pipe_other, com_pipe_other, frame_size, recording)
         self.network_process.start()
-        self.ipc_thread = arnetwork.IPCThread(self)
+        self.ipc_thread = arnetwork.IPCThread(self, recording)
         self.ipc_thread.start()
         self.image = ""
         self.navdata = dict()
         self.time = 0
+        self.recording = recording
+        if self.recording != None:
+            self.commandsfile = open(self.recording + '/commands.tsv', mode='w')
+            self.epoch = datetime.datetime(1970, 1, 1)
 
     def takeoff(self):
         """Make the drone takeoff."""
@@ -81,39 +85,39 @@ class ARDrone(object):
 
     def hover(self):
         """Make the drone hover."""
-        self.at(at_pcmd, False, 0, 0, 0, 0)
+        self.move(False, 0, 0, 0, 0)
 
     def move_left(self):
         """Make the drone move left."""
-        self.at(at_pcmd, True, -self.speed, 0, 0, 0)
+        self.move(True, -self.speed, 0, 0, 0)
 
     def move_right(self):
         """Make the drone move right."""
-        self.at(at_pcmd, True, self.speed, 0, 0, 0)
+        self.move(True, self.speed, 0, 0, 0)
 
     def move_up(self):
         """Make the drone rise upwards."""
-        self.at(at_pcmd, True, 0, 0, self.speed, 0)
+        self.move(True, 0, 0, self.speed, 0)
 
     def move_down(self):
         """Make the drone decent downwards."""
-        self.at(at_pcmd, True, 0, 0, -self.speed, 0)
+        self.move(True, 0, 0, -self.speed, 0)
 
     def move_forward(self):
         """Make the drone move forward."""
-        self.at(at_pcmd, True, 0, -self.speed, 0, 0)
+        self.move(True, 0, -self.speed, 0, 0)
 
     def move_backward(self):
         """Make the drone move backwards."""
-        self.at(at_pcmd, True, 0, self.speed, 0, 0)
+        self.move(True, 0, self.speed, 0, 0)
 
     def turn_left(self):
         """Make the drone rotate left."""
-        self.at(at_pcmd, True, 0, 0, 0, -self.speed)
+        self.move(True, 0, 0, 0, -self.speed)
 
     def turn_right(self):
         """Make the drone rotate right."""
-        self.at(at_pcmd, True, 0, 0, 0, self.speed)
+        self.move(True, 0, 0, 0, self.speed)
 
     def reset(self):
         """Toggle the drone's emergency state."""
@@ -170,18 +174,26 @@ class ARDrone(object):
         self.ipc_thread.stop()
         self.ipc_thread.join()
         self.lock.release()
+        if self.recording != None:
+            self.commandsfile.close()
         
-    def move(self,lr, fb, vv, va):
+    def move(self, progressive, lr, fb, vv, va):
         """Makes the drone move (translate/rotate).
 
  	   Parameters:
+       progressive -- True: enable progressive commands, False: disable (i.e.
+           enable hovering mode)
 	   lr -- left-right tilt: float [-1..1] negative: left, positive: right
 	   rb -- front-back tilt: float [-1..1] negative: forwards, positive:
         	backwards
 	   vv -- vertical speed: float [-1..1] negative: go down, positive: rise
 	   va -- angular speed: float [-1..1] negative: spin left, positive: spin 
         	right"""
-        self.at(at_pcmd, True, lr, fb, vv, va)
+        if self.recording != None:
+            timestamp = int((datetime.datetime.now() - self.epoch).total_seconds() * 1000)
+            self.commandsfile.write("\t".join(map(str, [timestamp, lr, fb, vv, va])) + "\n")
+
+        self.at(at_pcmd, progressive, lr, fb, vv, va)
 
 
 ###############################################################################
@@ -320,7 +332,8 @@ def at(command, seq, params):
     msg = "AT*%s=%i%s\r" % (command, seq, param_str)
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.sendto(msg, ("192.168.1.1", ARDRONE_COMMAND_PORT))
-    print "SENT: %s" % msg
+    if command != "COMWDG":
+        print "SENT: %s" % msg
 
 def f2i(f):
     """Interpret IEEE-754 floating-point value as signed integer.
@@ -387,11 +400,6 @@ def decode_navdata(packet):
         if id_nr == 0:
             values = struct.unpack_from("IIfffIfffI", "".join(values))
             values = dict(zip(['ctrl_state', 'battery', 'theta', 'phi', 'psi', 'altitude', 'vx', 'vy', 'vz', 'num_frames'], values))
-            # convert the millidegrees into degrees and round to int, as they
-            # are not so precise anyways
-            for i in 'theta', 'phi', 'psi':
-                values[i] = int(values[i] / 1000)
-                #values[i] /= 1000
         data[id_nr] = values
     return data
 

@@ -27,17 +27,25 @@ This simple application allows to control the drone and see the drone's video
 stream.
 """
 
+import os
+import sys
 
 import pygame
 
 import libardrone
 
 
-def main():
+def main(recording = None):
+    if recording != None:
+        i = 1
+        while os.path.exists(recording + '%02d' % i):
+            i += 1
+        recording = recording + '%02d' % i
+        os.mkdir(recording)
     pygame.init()
     W, H = 640, 360
     screen = pygame.display.set_mode((W, H))
-    drone = libardrone.ARDrone(frame_size=(W,H))
+    drone = libardrone.ARDrone(frame_size=(W,H), recording=recording)
     clock = pygame.time.Clock()
     running = True
     while running:
@@ -122,5 +130,8 @@ def main():
     print "Ok."
 
 if __name__ == '__main__':
-    main()
+    recording = None
+    if len(sys.argv) >= 2:
+        recording = sys.argv[1]
+    main(recording)
 

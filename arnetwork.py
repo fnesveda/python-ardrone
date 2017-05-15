@@ -23,6 +23,7 @@
 This module provides access to the data provided by the AR.Drone.
 """
 
+import datetime
 import select
 import socket
 import threading
@@ -39,26 +40,34 @@ class ARDroneNetworkProcess(multiprocessing.Process):
     data and sends it to the IPCThread.
     """
 
-    def __init__(self, nav_pipe, video_pipe, com_pipe, frame_size=(360,640)):
+    def __init__(self, nav_pipe, video_pipe, com_pipe, frame_size=(360,640), recording=None):
         multiprocessing.Process.__init__(self)
         self.nav_pipe = nav_pipe
         self.video_pipe = video_pipe
         self.com_pipe = com_pipe
-        self.paveparser = ar2video.PaVEParser(self.video_pipe, frame_size=frame_size)
+        self.recording = recording
+        self.paveparser = ar2video.PaVEParser(self.video_pipe, frame_size=frame_size, recording=self.recording)
 
     def run(self):
         #video_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         #video_socket.setblocking(0)
         #video_socket.bind(('', libardrone.ARDRONE_VIDEO_PORT))
         #video_socket.sendto("\x01\x00\x00\x00", ('192.168.1.1', libardrone.ARDRONE_VIDEO_PORT))
-        video_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        video_socket.connect(('192.168.1.1', libardrone.ARDRONE_VIDEO_PORT))
-        video_socket.setblocking(0)
+        try:
+            video_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            video_socket.connect(('192.168.1.1', libardrone.ARDRONE_VIDEO_PORT))
+            video_socket.setblocking(0)
+        except IOError:
+            return
 
-        nav_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        nav_socket.setblocking(0)
-        nav_socket.bind(('', libardrone.ARDRONE_NAVDATA_PORT))
-        nav_socket.sendto("\x01\x00\x00\x00", ('192.168.1.1', libardrone.ARDRONE_NAVDATA_PORT))
+        try:
+            nav_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            nav_socket.setblocking(0)
+            nav_socket.bind(('', libardrone.ARDRONE_NAVDATA_PORT))
+            nav_socket.sendto("\x01\x00\x00\x00", ('192.168.1.1', libardrone.ARDRONE_NAVDATA_PORT))
+        except IOError:
+            video_socket.close()
+            return
 
         stopping = False
         while not stopping:
@@ -100,12 +109,16 @@ class IPCThread(threading.Thread):
     it to the ARDreone.
     """
 
-    def __init__(self, drone):
+    def __init__(self, drone, recording=None):
         threading.Thread.__init__(self)
         self.drone = drone
         self.stopping = False
+        self.recording = recording
 
     def run(self):
+        if self.recording != None:
+            self.navdatafile = open(self.recording + '/navdata.tsv', mode='w')
+        epoch = datetime.datetime(1970, 1, 1)
         while not self.stopping:
             inputready, outputready, exceptready = select.select([self.drone.video_pipe, self.drone.nav_pipe], [], [], 1)
             for i in inputready:
@@ -115,8 +128,15 @@ class IPCThread(threading.Thread):
                     self.drone.image = image
                 elif i == self.drone.nav_pipe:
                     while self.drone.nav_pipe.poll():
+                        timestamp = int((datetime.datetime.now() - epoch).total_seconds() * 1000)
                         navdata = self.drone.nav_pipe.recv()
+                        if self.recording != None:
+                            if 0 in navdata:
+                                self.navdatafile.write("\t".join(map(str, [timestamp, navdata[0]['ctrl_state'], navdata[0]['battery'], navdata[0]['theta'], navdata[0]['phi'], navdata[0]['psi'], navdata[0]['altitude'], navdata[0]['vx'], navdata[0]['vy'], navdata[0]['vz']])) + "\n")
                     self.drone.navdata = navdata
+
+        if self.recording != None:
+            self.navdatafile.close()
 
     def stop(self):
         """Stop the IPCThread activity."""

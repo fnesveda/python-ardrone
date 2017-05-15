@@ -69,7 +69,7 @@ class PaVEParser(object):
 
     HEADER_SIZE_SHORT = 64; # sometimes header is longer
 
-    def __init__(self, outputpipe, frame_size=(360, 640)):
+    def __init__(self, outputpipe, frame_size=(360, 640), recording=None):
         self.buffer = ""
         self.state = self.handle_header
         self.outputpipe = outputpipe
@@ -84,10 +84,13 @@ class PaVEParser(object):
         if (PaVEParser.which('ffmpeg') is None):
             raise Exception("You need to install ffmpeg to be able to run ardrone")
 
+        args = ["nice", "-n", "15", "ffmpeg", "-i", "-", "-f", "h264",
+                "-probesize", "2048", "-flags", "low_delay", "-f",
+                "rawvideo", "-pix_fmt", 'rgb24', "-"]
+        if recording != None:
+            args.append(recording + '/video.mp4')
         #p = Popen(["nice", "-n", "15", "ffmpeg", "-i", "-", "-f", "sdl",
-        p = Popen(["nice", "-n", "15", "ffmpeg", "-i", "-", "-f", "h264",
-                   "-probesize", "2048", "-flags", "low_delay", "-f",
-                   "rawvideo", "-pix_fmt", 'rgb24', "-"],
+        p = Popen(args,
                   stdin=PIPE, stdout=PIPE, stderr=open('/dev/null', 'w'),
                   bufsize=0, preexec_fn=set_death_signal_int)
         t = Thread(target=enqueue_output, args=(p.stdout, self.outputpipe, frame_size))
