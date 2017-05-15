@@ -107,6 +107,9 @@ def main(recording = None):
                     drone.speed = 0.9
                 elif event.key == pygame.K_0:
                     drone.speed = 1.0
+                # camera selection
+                elif event.key == pygame.K_c:
+                    drone.switch_camera()
 
         try:
             #surface = pygame.image.fromstring(drone.image, (W, H), 'RGB')

@@ -68,6 +68,8 @@ class ARDrone(object):
         self.image = ""
         self.navdata = dict()
         self.time = 0
+        self.camera = 0 # 0 = front, 1 = bottom
+        self.switch_camera(self.camera)
         self.recording = recording
         if self.recording != None:
             self.commandsfile = open(self.recording + '/commands.tsv', mode='w')
@@ -194,6 +196,13 @@ class ARDrone(object):
             self.commandsfile.write("\t".join(map(str, [timestamp, lr, fb, vv, va])) + "\n")
 
         self.at(at_pcmd, progressive, lr, fb, vv, va)
+
+    def switch_camera(self, camera=None):
+        if camera == None:
+            self.camera = 1 - self.camera
+        else:
+            self.camera = camera
+        self.at(at_config, "video:video_channel", self.camera)
 
 
 ###############################################################################

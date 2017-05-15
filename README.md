@@ -39,6 +39,7 @@ and lets you remote-control the drone with the keyboard:
     1,2,...,0   - speed
     UP/DOWN     - altitude
     LEFT/RIGHT  - turn left/right
+    c           - switch between front and bottom camera
 
 To record the video, navdata and commands from the flight, start the demo as `demo.py recordingFolderPath`.
 
